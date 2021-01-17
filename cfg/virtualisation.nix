@@ -35,7 +35,7 @@ in
       "vfio_pci"
       "vfio_virqfd"
       "vfio_iommu_type1"
-      "efivarfs"
+#      "efivarfs"
     ];
   };
 
