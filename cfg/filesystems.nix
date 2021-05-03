@@ -27,6 +27,12 @@
       device = "rpool/safe/storage/vm";
       fsType = "zfs";
     };
+
+    "/storage/vm/pfsense" = {
+      device = "rpool/safe/storage/vm/pfsense";
+      fsType = "zfs";
+    };
+
 #    "/key" = {
 #      device = "/dev/disk/by-id/usb-Kingston_DataTraveler_3.0_6C626D7C24E3F1A0691F0308-0:0-part1";
 #      fsType = "vfat";
