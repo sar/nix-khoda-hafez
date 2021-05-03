@@ -17,10 +17,10 @@ in
       "pci=realloc"
       "pci=assign-busses"
       "pci=nocrs"
-      "pci_pt_e820_access=on"
-      "amd_iommu=pt"
+#      "pci_pt_e820_access=on"
+      "amd_iommu=on"
 #     "topoext"
-      "iommu=pt"
+      "iommu=on"
 #      "kvm_amd.npt=1"
 #      "kvm_amd.nested=1"
 #     "hugepages=8192"
@@ -31,10 +31,10 @@ in
     kernelModules = [
       "kvm_amd"
       "amd_iommu"
-      "vfio"
-      "vfio_pci"
-      "vfio_virqfd"
-      "vfio_iommu_type1"
+#      "vfio"
+#      "vfio_pci"
+#      "vfio_virqfd"
+#      "vfio_iommu_type1"
 #      "efivarfs"
     ];
   };

@@ -15,16 +15,31 @@ in
   services.udev = {
     path = [
       /bin
-#      /sbin
       /usr/bin
     ];
     extraRules = ''
-      ACTION=="add", \
-      SUBSYSTEM=="net", \
-      ENV{PRODUCT}=="8086/1572", \     
-      ENV{ID_NET_DRIVER}=="i40e", \
-      ATTR{device/sriov_numvfs}="4", \
-      ATTR{device/sriov_drivers_autoprobe}="1"
+      SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="68:05:ca:32:36:fc", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="eth*", NAME="sfp0"
+
+      SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="68:05:ca:32:36:fd", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="eth*", NAME="sfp1"
+
+      SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="68:05:ca:32:36:fe", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="eth*", NAME="sfp2"
+
+      SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="68:05:ca:32:36:ff", ATTR{dev_id}=="0x0", ATTR{type}=="1", KERNEL=="eth*", NAME="sfp3"
   '';
+  };
+
+  networking.interfaces = {
+    sfp0 = {
+      useDHCP = false;
+    };
+    sfp1 = {
+      useDHCP = false;
+    };
+    sfp2 = {
+      useDHCP = false;
+    };
+    sfp3 = {
+      useDHCP = false;
+    };
   };
 }

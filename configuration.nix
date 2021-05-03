@@ -1,5 +1,9 @@
-{ config, pkgs, ... }:
+{ config, pkgs, options, ... }:
 {
+
+  nix.nixPath = options.nix.nixPath.default ++ [ "nixpkgs-overlays=/etc/nixos/overlays/" ];
+    
+
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
@@ -86,6 +90,8 @@
       cmake
       zip
       usbutils
+      libsysfs
+#      i40e
     ];  
   };
   

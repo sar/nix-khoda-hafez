@@ -22,7 +22,9 @@
       flashrom
       gnumake
       cmake
+      systool
       zip
+      autoconf
     ];
   };
 }

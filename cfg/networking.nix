@@ -11,9 +11,11 @@ in
   networking = {
     hostName = "khoda-hafez";
     hostId = "beef0dad";
+    # global dhcp while im working on it as the interface names change.
     useDHCP = true;
-    nameservers = [ "192.168.69.1" "8.8.8.8" "1.1.1.1" ];
+    nameservers = [ "192.168.69.1" "8.8.8.8" "1.1.1.1" ];    
     firewall = {
+      # this is just for while im working on it.
       enable = false;
 #      allowedTCPPorts = [      ];
 #      allowedUDPPorts = [      ];
@@ -23,15 +25,12 @@ in
       enable = true;
     };
     bridges = {
-      bridge5 = {
-        interfaces = [ "enp6s0" ];
+      br-eth0 = {
+        interfaces = [ "eth0" ];
       };
-#      bridge0 = {
-#        interfaces = [ "enp10s0f0" ];
-#      };
     };
     interfaces = {
-      bridge5 = {
+      br-eth0 = {
         macAddress = "2c:f0:5d:42:06:90";
         useDHCP = false;
         ipv4 = {
@@ -40,21 +39,10 @@ in
 	  ];
         };
       };
-#      bridge0 = {
-#       enp10s0f0 = {
-#        macAddress = "68:05:c4:20:69:00";
-#        useDHCP = false;
-#        ipv4 = {
-#          addresses = [
-#            { address = "192.168.69.205"; prefixLength = 24; }
-#	  ];
-#        };
-#      };
-#      wlp7s0.useDHCP = true;
     };
     defaultGateway = {
       address = "192.168.69.1";
-      interface = "bridge5";
+      interface = "br-eth0";
       metric = 100;
     };
 #    localCommands = '' ''    
@@ -63,6 +51,7 @@ in
     systemPackages = with pkgs; [
       iproute
       ethtool
+      lldpd
     ];
   };
 }
