@@ -13,6 +13,10 @@
     # the boot section is all requred for encrypted zfs root
   boot = {
 
+#    blacklistedKernelModules = [
+#      ""
+#    ];
+
     zfs = {
       devNodes = "/dev/disk/by-path";
       forceImportRoot = true;
@@ -112,4 +116,5 @@
   system.stateVersion = "20.09"; # Did you read the comment?
   nixpkgs.config.allowUnfree = true;
   nix.autoOptimiseStore = true;
+  nix.gc.automatic = false;
 }

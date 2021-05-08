@@ -24,25 +24,10 @@ in
     iproute2 = {
       enable = true;
     };
-    bridges = {
-      br-eth0 = {
-        interfaces = [ "eth0" ];
-      };
-    };
-    interfaces = {
-      br-eth0 = {
-        macAddress = "2c:f0:5d:42:06:90";
-        useDHCP = false;
-        ipv4 = {
-          addresses = [
-            { address = "192.168.69.203"; prefixLength = 24; }
-	  ];
-        };
-      };
-    };
+
     defaultGateway = {
       address = "192.168.69.1";
-      interface = "br-eth0";
+      interface = "br-net0";
       metric = 100;
     };
 #    localCommands = '' ''    

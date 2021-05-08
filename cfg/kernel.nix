@@ -11,4 +11,6 @@
 #      linuxPackages.kernel.dev      
     ];
   };
+
+  boot.kernelParams = [ "nomodeset" ];
 }
