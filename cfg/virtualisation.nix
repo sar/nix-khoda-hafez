@@ -16,12 +16,11 @@ in
     kernelParams = [
       "pci=realloc"
       "pci=assign-busses"
-
+      "amd_iommu=on"
+      "iommu=on"      
       # "pci=nocrs" # causes usb xhci_* drivers to not function properly
 #      "pci_pt_e820_access=on"
-      "amd_iommu=on"
 #     "topoext"
-      "iommu=on"
 #      "kvm_amd.npt=1"
 #      "kvm_amd.nested=1"
 #     "hugepages=8192"

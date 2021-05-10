@@ -1,15 +1,26 @@
 { config, pkgs, options, ... }:
 {
 
-  nix.nixPath = options.nix.nixPath.default ++ [ "nixpkgs-overlays=/etc/nixos/overlays/" ];
+  nix.nixPath =
+    options.nix.nixPath.default ++ [
+#      "nixpkgs-overlays=/etc/nixos/overlays-compat/"
+      "nixpkgs-overlays=/etc/nixos/overlays/"
+    ];
     
 
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
-      ./overlays
       ./cfg.nix
+      ./overlays
     ];
+
+
+#  nixpkgs.overlays = [
+#    (import /etc/nixos/overlays)
+#  ];
+
+
     # the boot section is all requred for encrypted zfs root
   boot = {
 

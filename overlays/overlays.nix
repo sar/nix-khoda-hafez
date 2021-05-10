@@ -5,5 +5,6 @@ let
 in
 {
   # package-name = callPackage ./pkgs/pathtopackage { };
-  i40e = callPackage ./pkgs/i40e { };  
+  # i40e = callPackage ./pkgs/i40e { };
+  #  myEmacs = callPackage ./pkgs/emacs { };	
 }

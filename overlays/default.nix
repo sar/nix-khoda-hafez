@@ -8,6 +8,6 @@
 
   # Imports the overlay
   nixpkgs.overlays = [
-    (import ./overlay.nix)
+    (import ./overlays.nix)
   ];
 }
