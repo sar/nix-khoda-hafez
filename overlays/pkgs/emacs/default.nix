@@ -1,5 +1,6 @@
 #{ config, pkgs, options, ... }:
-
+# this might work:
+# https://github.com/gsood-gaurav/nixos/blob/f2b2a0fd1444774b4ec3ad4a9f543a280ba1a4a1/nixpkgs/overlays/emacs.nix
 #####
 # ones I want to look at but maybe not on this server:
 # https://github.com/domtronn/all-the-icons.el
