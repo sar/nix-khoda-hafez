@@ -1,5 +1,5 @@
 #{ config, pkgs, options, ... }:
-# this might work:
+# this worked:
 # https://github.com/gsood-gaurav/nixos/blob/f2b2a0fd1444774b4ec3ad4a9f543a280ba1a4a1/nixpkgs/overlays/emacs.nix
 #####
 # ones I want to look at but maybe not on this server:
@@ -9,6 +9,9 @@
 #####
 self: super: 
 
+let
+  myEmacs = super.emacs; 
+  emacsWithPackages = (super.emacsPackagesGen myEmacs).emacsWithPackages;
   myEmacsConfig = super.writeText "default.el" ''
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -34,8 +37,8 @@ self: super:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; emojify
 ;; https://github.com/iqbalansari/emacs-emojify
-(use-package emojify
-  :hook (after-init . global-emojify-mode))
+;;(use-package emojify
+;;  :hook (after-init . global-emojify-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; elpy
@@ -66,18 +69,21 @@ self: super:
   :mode "\\.nix\\'")
   
   '';
-
-  myEmacs = pkgs.emacsWithPackages (epkgs: (with epkgs.melpaStablePackages; [
-    (runCommand "default.el" {} ''
+in
+{
+  myEmacs = emacsWithPackages (epkgs: (with epkgs.melpaStablePackages; [
+    (super.runCommand "default.el" {} ''
       set -x
       mkdir -p $out/share/emacs/site-lisp
       cp ${myEmacsConfig} $out/share/emacs/site-lisp/default.el
     '')
+    use-package
     flycheck
     yaml-mode
     nix-mode
     elpy
     ansible
     sublimity
-    emojify
+#    emojify
   ]));
+}

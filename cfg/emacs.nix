@@ -10,11 +10,12 @@
     defaultEditor = true;
     package = pkgs.emacs-nox;
   };
+  
 #  environment = {
 #    systemPackages = with pkgs; [
 #     myEmacs
 #    ];
 #  };
 
-# nixpkgs.overlays = [ (import /etc/nixos/overlays
+  nixpkgs.overlays = [ (import /etc/nixos/overlays/pkgs/emacs/default.nix) ];
 }
