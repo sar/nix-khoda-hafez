@@ -1,4 +1,7 @@
-#{ config, pkgs, options, ... }:
+#####
+# This creates emacs-brody
+#####
+
 # this worked:
 # https://github.com/gsood-gaurav/nixos/blob/f2b2a0fd1444774b4ec3ad4a9f543a280ba1a4a1/nixpkgs/overlays/emacs.nix
 #####
@@ -10,8 +13,8 @@
 self: super: 
 
 let
-  myEmacs = super.emacs; 
-  emacsWithPackages = (super.emacsPackagesGen myEmacs).emacsWithPackages;
+  emacs-brody = super.emacs-nox; 
+  emacsWithPackages = (super.emacsPackagesGen emacs-brody).emacsWithPackages;
   myEmacsConfig = super.writeText "default.el" ''
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -33,7 +36,7 @@ let
 ;; ansible
 ;; https://github.com/k1LoW/emacs-ansible
 (add-hook 'yaml-mode-hook '(lambda () (ansible 1)))
-asdf
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; emojify
 ;; https://github.com/iqbalansari/emacs-emojify
@@ -71,7 +74,7 @@ asdf
   '';
 in
 {
-  myEmacs = emacsWithPackages (epkgs: (with epkgs.melpaStablePackages; [
+  emacs-brody = emacsWithPackages (epkgs: (with epkgs.melpaStablePackages; [
     (super.runCommand "default.el" {} ''
       set -x
       mkdir -p $out/share/emacs/site-lisp

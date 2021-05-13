@@ -15,12 +15,6 @@
       ./overlays
     ];
 
-
-#  nixpkgs.overlays = [
-#    (import /etc/nixos/overlays)
-#  ];
-
-
     # the boot section is all requred for encrypted zfs root
   boot = {
 
@@ -74,7 +68,6 @@
   # $ nix search wget
   environment = {
     systemPackages = with pkgs; [
-      myEmacs
       neofetch
       htop
       git

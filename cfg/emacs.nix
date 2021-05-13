@@ -1,8 +1,4 @@
 { config, pkgs, options, ... }:
-#let
-#  myEmacs = import /etc/nixos/overlays/pkgs/emacs/default.nix-one-i-want;
-#  myEmacs = import /etc/nixos/overlays/pkgs/emacs/default.nix-from-the-docs;  
-#in
 {
   services.emacs = {
     install = true;
@@ -11,11 +7,12 @@
     package = pkgs.emacs-nox;
   };
   
-#  environment = {
-#    systemPackages = with pkgs; [
-#     myEmacs
-#    ];
-#  };
+  environment = {
+    systemPackages = with pkgs; [
+     emacs-brody
+    ];
+  };
 
-  nixpkgs.overlays = [ (import /etc/nixos/overlays/pkgs/emacs/default.nix) ];
+  # brings in emacs-brody
+  nixpkgs.overlays = [ (import /etc/nixos/overlays/emacs.nix) ];
 }
