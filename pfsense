@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# quick script so i can test parts of Nix code without also having to know how to download things with nix
+# I'm not good at nix but I'm as good as I *want* to be at bash.
+set -x
+version="2.5.1"
+iso=/storage/vm/pfsense/pfSense-CE-${version}-RELEASE-amd64.iso
+isoGz=/storage/vm/pfsense/pfSense-CE-${version}-RELEASE-amd64.iso.gz
+isoSha256=/storage/vm/pfsense/pfSense-CE-${version}-RELEASE-amd64.iso.gz.sha256
+wget https://nyifiles.netgate.com/mirror/downloads/pfSense-CE-${version}-RELEASE-amd64.iso.gz -O ${isoGz}
+wget https://www.pfsense.org/hashes/pfSense-CE-${version}-RELEASE-amd64.iso.gz.sha256 -O ${isoSha256}
+sum1="$(sha256sum ${isoGz} | awk '{print $1}')"
+sum2="$(cat ${isoSha256} | awk '{print $4}')"
+if [[ ${sum1} == ${sum2} ]]
+then
+    printf "\nSHA256 sums match.\n"
+    gunzip -kf ${isoGz} 
+fi

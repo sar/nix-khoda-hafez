@@ -13,6 +13,6 @@
     ];
   };
 
-  # brings in emacs-brody
+  # brings in emacs-brody overlay for my config.
   nixpkgs.overlays = [ (import /etc/nixos/overlays/emacs.nix) ];
 }

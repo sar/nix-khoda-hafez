@@ -4,6 +4,7 @@
     systemPackages = with pkgs; [
       openssh
       sshfs
+      eternal-terminal
     ];
   };
   services = {
@@ -16,7 +17,13 @@
       passwordAuthentication = false;
       forwardX11 = true;
     };
+    
+    eternal-terminal = {
+      enable = true;
+      port = 2022;
+    };  
   };
+  
   users.users = {
     brody = {
       openssh.authorizedKeys.keyFiles = [ /etc/nixos/cfg/ssh-keys/brody.pub ];
