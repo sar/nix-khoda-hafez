@@ -1,0 +1,291 @@
+#! /usr/bin/env bash
+set -x
+ARG="${1}"
+
+# ZFS Structure:
+# rpool
+# - safe # encrypted
+#   - nixos
+#     - root
+#   - storage # OS independent
+#     - home 
+#     - vm
+#     - secrets
+# - local # unencrypted
+#   - nixos
+#     - nix # nix developers recommend this not being encrypted
+# bpool
+# - local 
+#   - nixos
+#     - boot
+DISK1ID=/dev/disk/by-id/ata-Samsung_SSD_870_QVO_1TB_S5VSNG0N801924W
+DISK2ID=/dev/disk/by-id/ata-Samsung_SSD_870_QVO_1TB_S5VSNG0NA25723Z
+#DISK1UUID=/dev/disk/by-id/ata-Samsung_SSD_870_QVO_1TB_S5VSNG0N801924W
+#DISK2UUID=/dev/disk/by-id/ata-Samsung_SSD_870_QVO_1TB_S5VSNG0NA25723Z
+#DISK1=/dev/disk/by-id/wwn-0x5002538f70804eaf
+#DISK2=/dev/disk/by-id/wwn-0x5002538f70a1be25
+# nixos is being a POS and won't accept /dev/by-id/ for zpool creation
+DISK1=/dev/sda
+DISK2=/dev/sdb
+DISKS=( ${DISK1} ${DISK2} )
+
+# core pools
+RPOOL="rpool"
+BPOOL="bpool"
+
+# root pool encrypted datasets
+
+RPSAFE=${RPOOL}/safe
+RPSAFENIXOS=${RPSAFE}/nixos
+RPSAFENIXOSROOT=${RPSAFENIXOS}/root
+RPSAFESTORAGE=${RPSAFE}/storage
+RPSAFESTORAGEHOME=${RPSAFESTORAGE}/home
+RPSAFESTORAGEVM=${RPSAFESTORAGE}/vm
+RPSAFESTORAGESECRETS=${RPSAFESTORAGE}/secrets
+RPLOCAL=${RPOOL}/local
+RPLOCALSTORAGE=${RPLOCAL}/storage
+RPLOCALSTORAGENIXOS=${RPLOCALSTORAGE}/nixos
+RPLOCALSTORAGENIXOSNIX=${RPLOCALSTORAGENIXOS}/nix
+#BPLOCAL=${BPOOL}/local
+#BPLOCALNIXOS=${BPLOCAL}/nixos
+#BPLOCALNIXOSBOOT=${BPLOCALNIXOS}/boot
+
+# minimum options
+OPT="-O dedup=off \
+-O compression=lz4 \
+-O recordsize=8k \
+-O relatime=on \
+-O xattr=sa \
+-O acltype=posixacl \
+-O devices=off \
+-O canmount=off \
+-O overlay=on \
+-O mountpoint=none"
+
+# minimum features
+FEAT="-o ashift=9 -d \
+-o feature@async_destroy=enabled \
+-o feature@bookmarks=enabled \
+-o feature@embedded_data=enabled \
+-o feature@empty_bpobj=enabled \
+-o feature@enabled_txg=enabled \
+-o feature@extensible_dataset=enabled \
+-o feature@filesystem_limits=enabled \
+-o feature@hole_birth=enabled \
+-o feature@large_blocks=enabled \
+-o feature@lz4_compress=enabled \
+-o feature@spacemap_histogram=enabled \
+-o feature@zpool_checkpoint=enabled \
+-o feature@encryption=enabled"
+
+# options that can be set per dataset
+DSETOPT=""
+NIXDSETOPT=""
+ROOTDSETOPT=""
+MOUNTDSETOPT="" #-o mountpoint=legacy"
+SUBDSETOPT="-o encryption=off"
+
+# boot pool options
+#BPOPT="${OPT}"
+#BPFEAT="${FEAT}"
+
+# root pool options
+RPOPT="${OPT}"
+RPFEAT="${FEAT}"
+
+USBDEVID="/dev/disk/by-id/usb-Kingston_DataTraveler_3.0_6C626D7C24E3F1A0691F0308-0:0"
+USBDEVPART="${USBDEVID}-part1"
+KEYFOLDER="/keys"
+KEYFILE="${KEYFOLDER}/key"
+#REALKEYFILE="/keys/key"
+SAFEDSETOPT="-o encryption=aes-256-gcm \
+-o keyformat=passphrase \
+-o keylocation=file://${KEYFILE}"
+
+umount -a
+rm -rf /mnt/*
+wipefs -af ${USBDEVID}
+sgdisk -n1:0:0 -t1:EF00 ${USBDEVID}
+nix-env -iv openssl
+mkdir -p /keys
+mount -t vfat ${USBDEVPART} /keys
+openssl rand -base64 -writerand ${KEYFILE} 20000
+scp ${KEYFILE} pi@192.168.69.69:/home/pi/
+sync -f && wait
+
+
+function runOnAll(){
+  for DISK in ${DISKS[@]}; do
+      ${1} ${DISK}
+      echo "$?"
+  done
+}
+
+# unmount old zfs partitions in case
+zfs umount -a
+zpool export -a
+
+# wipe:
+zpool labelclear -f ${DISK1}
+zpool labelclear -f ${DISK1}-part1
+zpool labelclear -f ${DISK1}-part2
+zpool labelclear -f ${DISK2}
+zpool labelclear -f ${DISK2}-part1
+zpool labelclear -f ${DISK2}-part2
+
+sgdisk --zap-all ${DISK1ID} && sync -f && wait
+wipefs -af ${DISK1ID} && sync -f && wait
+zpool labelclear -f ${DISK2ID}
+sgdisk --zap-all ${DISK2ID} && sync -f && wait
+wipefs -af ${DISK2ID} && sync -f && wait
+
+# sleep 10
+
+# boot partition:
+sgdisk -n2:1M:+1G -t2:EF00 ${DISK1ID} && sync -f && wait
+# root partition:
+sgdisk -n1:0:0 -t1:BF01 ${DISK1ID} && sync -f && wait
+# copy to other disk
+# it just won't make the parition 
+sfdisk --dump ${DISK1ID} | sfdisk ${DISK2ID} && sync -f && wait
+
+mkfs.vfat ${DISK1ID}-part2 && sync -f && wait
+mkfs.vfat ${DISK2ID}-part2 && sync -f && wait
+
+
+
+
+zpool create -f \
+      ${RPOPT} \
+      ${RPFEAT} \
+      ${RPOOL} mirror \
+      "${DISK1}1" \
+      "${DISK2}1" && zpool set feature@encryption=enabled rpool
+# encrypted setup
+zfs create \
+    ${SAFEDSETOPT} \
+    ${RPSAFE}
+# safe/nixos
+zfs create ${MOUNTDSETOPT} \
+    ${RPSAFENIXOS}
+# safe/nixos/root
+zfs create ${SUBDSETOPT} \
+    ${RPSAFENIXOSROOT}
+# safe/storage
+zfs create ${MOUNTDSETOPT} \
+    ${RPSAFESTORAGE}
+# safe/storage/home
+zfs create ${SUBDSETOPT} \
+    ${RPSAFESTORAGEHOME}
+# safe/storage/vm
+zfs create ${SUBDSETOPT} \
+    ${RPSAFESTORAGEVM}
+# safe/storage/secrets
+zfs create ${SUBDSETOPT} \
+    ${RPSAFESTORAGESECRETS}
+# local
+zfs create ${DSETOPT} \
+    ${RPLOCAL}
+# local/storage
+zfs create ${MOUNTDSETOPT} \
+    ${RPLOCALSTORAGE}
+# local/storage/nixos
+zfs create ${SUBDSETOPT} \
+    ${RPLOCALSTORAGENIXOS}
+# local/storage/nixos/nix
+zfs create ${SUBDSETOPT} \
+    ${RPLOCALSTORAGENIXOSNIX}
+
+# creating uefi partitions
+#mdadm --create /dev/md0 --level=1 --raid-devices=2 --metadata=1.0 ${DISK1}1 ${DISK2}1
+
+#zpool create -f \
+#      ${BPOPT} \
+#      ${BPFEAT} \
+#      ${BPOOL} mirror \
+#      "${DISK1}3" \
+#      "${DISK2}3"
+#zfs create ${DSETOP} \
+#    ${BPLOCAL}
+#zfs create ${MOUNTDSETOPT} \
+#    ${BPLOCALNIXOS}
+#zfs create ${SUBDSETOP} \
+#    -o mountpoint=/mnt/nixos/root/boot \
+#    ${BPLOCALNIXOSBOOT}
+
+
+function setLegacyMounts(){
+    echo "############################################"    
+    zfs list
+    echo "############################################"
+    local MOUNTABLEDATASETS=( $(zfs list | grep -o -e ".pool\/.*\/.*\/.*" | cut -d ' ' -f1 | grep -v -e '/nixos$') )
+    local ROOTDATASET=( $(zfs list | grep -o -e ".pool\/.*\/.*\/.*" | cut -d ' ' -f1 | grep -e '/root$') )
+    for pool in ${MOUNTABLEDATASETS[@]}
+    do
+	zfs set mountpoint=legacy ${pool}
+	zfs set canmount=noauto ${pool}
+    done
+    zfs set mountpoint=legacy ${ROOTDATASET}
+    echo "############################################"
+    zfs list
+    echo "############################################"
+}
+setLegacyMounts
+
+umount -a
+zfs umount -a
+zpool export -a
+zpool import -a
+
+# mount the key dir
+mkdir -p ${KEYFOLDER}
+mount -t vfat ${USBDEVPART} ${KEYFOLDER}
+# load the key
+zfs load-key -a
+
+# remove old folders so zfs can mount
+rm -rf /mnt/*
+
+# make root mountpoint && mount root
+mkdir -p /mnt/nixos/root
+mount -t zfs rpool/safe/nixos/root /mnt/nixos/root
+
+# make the mountpoints under the root dir
+mkdir -p /mnt/nixos/root/storage/secrets
+mkdir -p /mnt/nixos/root/storage/vm
+mkdir -p /mnt/nixos/root/home
+mkdir -p /mnt/nixos/root/nix
+mkdir -p /mnt/nixos/root/boot
+mkdir -p /mnt/nixos/root/boot-fallback
+mkdir -p /mnt/nixos/root/keys
+
+# make the folder for our key dir again
+
+
+# mount our directories
+mount -t zfs rpool/local/storage/nixos/nix /mnt/nixos/root/nix
+mount -t zfs rpool/safe/storage/home /mnt/nixos/root/home
+mount -t zfs rpool/safe/storage/secrets /mnt/nixos/root/storage/secrets
+mount -t zfs rpool/safe/storage/vm /mnt/nixos/root/storage/vm
+
+# mount the boot directory
+mount -t vfat ${DISK1ID}-part2 /mnt/nixos/root/boot
+mount -t vfat ${DISK2ID}-part2 /mnt/nixos/root/boot-fallback
+
+# does the key-loading thing even work in this order?
+
+# 
+DISK2UUID=$(lsblk ${DISK2ID}-part2 -o uuid -n)
+
+# generate nix config
+nixos-generate-config --root /mnt/nixos/root
+
+# move the old one
+mv /mnt/nixos/root/etc/nixos/configuration.nix /mnt/nixos/root/etc/nixos/configuration.nix.backup
+
+# input mine
+#cat <<EOF > /mnt/nixos/root/etc/nixos/configuration.nix
+scp -r ./nixos/* /mnt/nixos/root/etc/nixos/
+nixos-install --root /mnt/nixos/root
+
+exit "${?}"
