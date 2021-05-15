@@ -28,13 +28,15 @@ let
   version = "2.5.1";
   buildPfsense = vmName:
     {
-      sha256sum = pkgs.fetchurl {
-        url = https://www.pfsense.org/hashes/pfSense-CE-${version}-RELEASE-amd64.iso.gz.sha256;
-      };
-      
+
+      # ya I don't know if this works yet honestly
       iso = pkgs.fetchurl {
         url = https://nyifiles.netgate.com/mirror/downloads/pfSense-CE-${version}-RELEASE-amd64.iso.gz;
-	      sha256 = sha256sum;
+	sha256 = sha256sum;
+      };
+
+      sha256sum = pkgs.fetchurl {
+        url = https://www.pfsense.org/hashes/pfSense-CE-${version}-RELEASE-amd64.iso.gz.sha256;
       };
 
       after = [ "libvirtd.service" ];
