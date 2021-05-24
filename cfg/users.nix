@@ -5,6 +5,7 @@
     users = {
       brody = {
         name = "brody";
+        isNormalUser = true;
         description = "Biggest Admin";
 	shell = pkgs.bash;
         uid = 1000;

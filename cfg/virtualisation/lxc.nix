@@ -7,7 +7,7 @@ let
 nixInFolder = dir: map (x: dir + "/" + x) (attrNames (filterAttrs (name: _: hasSuffix ".nix" name) (readDir dir)));
 in
 {
-  imports = nixInFolder "/etc/nixos/cfg/virtualisation/lxc-containers";
+#  imports = nixInFolder "/etc/nixos/cfg/virtualisation/lxc-containers";
   environment = {
     systemPackages = with pkgs; [
       lxc

@@ -4,7 +4,7 @@
   nix.nixPath =
     options.nix.nixPath.default ++ [
 #      "nixpkgs-overlays=/etc/nixos/overlays-compat/"
-      "nixpkgs-overlays=/etc/nixos/overlays/"
+#      "nixpkgs-overlays=/etc/nixos/overlays/"
     ];
     
 
@@ -12,7 +12,7 @@
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
       ./cfg.nix
-      ./overlays
+#      ./overlays
     ];
 
     # the boot section is all requred for encrypted zfs root
@@ -100,7 +100,8 @@
       zip
       usbutils
       libsysfs
-#      i40e
+      #      i40e
+      fzf
     ];  
   };
   

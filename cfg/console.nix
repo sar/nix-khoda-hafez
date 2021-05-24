@@ -36,10 +36,10 @@
     serviceConfig.Restart = "always";
 #    reloadIfChanged = true;   
   };
-  console = {
-    earlySetup = true;
-    extraTTYs = [ "ttyUSB0" ];
-  };
+#  console = {
+#    earlySetup = true;
+#    extraTTYs = [ "ttyUSB0" ];
+#  };
   services.journald = {
     console = "/dev/ttyUSB0";
   };

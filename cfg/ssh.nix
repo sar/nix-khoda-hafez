@@ -1,4 +1,4 @@
-{ config, lib, pkgs, options, ... }:
+{ config, lib, pkgs, ... }:
 {
   environment =	{
     systemPackages = with pkgs; [
@@ -13,8 +13,8 @@
       openFirewall = true;
       ports = [ 22 ];
       allowSFTP = true;      
-      permitRootLogin = "no";
-      passwordAuthentication = false;
+      permitRootLogin = "without-password";
+      passwordAuthentication = true;
       forwardX11 = true;
     };
     

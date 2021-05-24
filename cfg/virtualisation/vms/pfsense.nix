@@ -1,4 +1,4 @@
-{ config, lib, pkgs, unzip, ... }:
+{ config, lib, pkgs, gzip, ... }:
 with lib;
 let
   version = "2.5.1";
@@ -16,25 +16,84 @@ let
   # what i have here is based on what I found here:
   # http://johnmercier.com/blog/2017/12-28-adding-jbake-to-nixpkgs.html
   # which has a section that makes more sense than anything in the docs.
-  download = {stdenv, fetchurl, unzip}:
-    pkgs.stdenv.mkDerivation {
-      name = "pfsense-${version}";
-      src = builtins.fetchurl {
-        url = "https://nyifiles.netgate.com/mirror/downloads/pfSense-CE-${version}-RELEASE-amd64.iso.gz";
-        sha256 = "be79df534558e6a73f7be2e8643c6ed01580e40b79b255f9bd8e8cca6471fee7";
-      };
-      buildInputs = [pkgs.unzip];
-      phases = [ "unpackPhase" "installPhase" ];
-      unpackPhase = ''
-        ls -lah
-        unzip ${src}  
-        ls -lah           
-      '';  
-      installPhase = ''
-        mv ${name} $out/storage/vms/pfsense/
-      '';          
-    };
+  # that said, it still doesn't work exactly
 
+  # going to have to look into this for out-of-store manipulation
+  # https://discourse.nixos.org/t/is-there-a-way-to-work-with-files-outside-nix-in-nixops/3220
+  # https://discourse.nixos.org/t/java-based-emacs-package-ejc-sql-expects-write-access-to-install-directory-need-workaround/8317
+  # https://discourse.nixos.org/t/unable-to-use-gzip-in-derivation-to-package-crystal-lsp-server-binary/12173/4
+  
+  download = pkgs.stdenv.mkDerivation {
+    name = "pfsense-${version}";
+    pname = "$name";
+    version = "2.5.1";    
+    src = pkgs.fetchzip {
+      url = ''https://nyifiles.netgate.com/mirror/downloads/pfSense-CE-${version}-RELEASE-amd64.iso.gz'';
+      sha256 = "be79df534558e6a73f7be2e8643c6ed01580e40b79b255f9bd8e8cca6471fee7";
+      downloadToTemp = true;
+      postFetch =
+    ''
+      echo $TMPDIR
+      ls -lah $TMPDIR
+      unpackDir="$TMPDIR/unpack"
+      mkdir "$unpackDir"
+      cd "$unpackDir"
+      renamed="$TMPDIR/pfSense-CE-${version}-RELEASE-amd64.iso.gz"
+      echo downloadedFile renamed
+      echo "$downloadedFile" "$renamed"
+      mv "$downloadedFile" "$renamed"
+      gzip -d "$renamed"
+    '' + ''
+      echo unpackDir
+      echo "$unpackDir"
+      fn=$(cd "$unpackDir" && echo *)
+      if [ -f "$unpackDir/$fn" ]; then
+        mkdir $out
+      fi
+      echo fn out
+      echo "$fn" "$out"
+      mv "$unpackDir/$fn" "$out"
+    '' + ''
+      $extraPostFetch
+    '' + ''
+      chmod 755 "$out"
+      ls $TMPDIR
+    '';
+    };
+#    phases = [ "buildPhase" "unpackPhase" "installPhase" ];    
+#    buildInputs = [pkgs.unzip];
+#    unpackPhase = ''unzip $src'';
+#    installPhase = ''mv $name $out/storage/vms/pfsense/'';
+  }
+  };
+
+   d = pkgs.stdenv.mkDerivation {
+     name = "pfsense-${version}";
+     pname = "$name";
+     version = "2.5.1";    
+     src = pkgs.fetchurl {
+       url = ''https://nyifiles.netgate.com/mirror/downloads/pfSense-CE-${version}-RELEASE-amd64.iso.gz'';
+       sha256 = "be79df534558e6a73f7be2e8643c6ed01580e40b79b255f9bd8e8cca6471fee7";
+       postFetch = ''
+         echo $TMPDIR
+         ls -lah $TMPDIR
+         unpackDir="$TMPDIR/unpack"
+         mkdir "$unpackDir"
+         cd "$unpackDir"
+         renamed="$TMPDIR/pfSense-CE-${version}-RELEASE-amd64.iso.gz"
+         echo downloadedFile renamed
+         echo "$downloadedFile" "$renamed"
+         mv "$downloadedFile" "$renamed"
+         gzip -d "$renamed"
+       '';
+     };
+     phases = [ "buildPhase" ]; # "unpackPhase" "installPhase" ];    
+     buildInputs = [pkgs.gzip];
+     #unpackPhase = ''gzip -d $src'';
+     #installPhase = ''ls -lahr'';
+     buildPhase = ''gzip -d $src'';
+   }
+   };
 
   
   buildPfsense = vmName: {
@@ -59,8 +118,8 @@ let
           net_wan_source_dev = "pfsense-wan";
           net_wan_mac_address = "68:05:c4:20:69:20";
           disk_img = "/storage/vm/pfsense/pfsense.raw";
-          disk_iso = "/storage/vm/pfsense/pfSense-CE-${version}-RELEASE-amd64.iso";
-#          disk_iso = "${download}";
+#          disk_iso = "/storage/vm/pfsense/pfSense-CE-${version}-RELEASE-amd64.iso";
+          disk_iso = "${builtins.toString download}";
         };
 
       in
@@ -86,8 +145,10 @@ let
   };
   #getIso = callPackage download {};
 in
+
 {
-  callPackage = download {};
+#  callpackage download {};
+  #callPackage = download {};
   systemd.services.libvirtd-guest-pfsense = buildPfsense "pfsense";
 }
     
