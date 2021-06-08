@@ -12,14 +12,8 @@ let
   gzip = "${pkgs.gzip}/bin/gzip";
   virsh = "${getBin pkgs.libvirt}/bin/virsh";
   qemu-img = "${pkgs.qemu}/bin/qemu-img";
-  # ya I don't know if this works yet honestly
 
-  # what i have here is based on what I found here:
-  # http://johnmercier.com/blog/2017/12-28-adding-jbake-to-nixpkgs.html
-  # which has a section that makes more sense than anything in the docs.
-  # that said, it still doesn't work exactly
-
-  # going to have to look into this for out-of-store manipulation
+  # info on out-of-store manipulation
   # https://discourse.nixos.org/t/is-there-a-way-to-work-with-files-outside-nix-in-nixops/3220
   # https://discourse.nixos.org/t/java-based-emacs-package-ejc-sql-expects-write-access-to-install-directory-need-workaround/8317
   # https://discourse.nixos.org/t/unable-to-use-gzip-in-derivation-to-package-crystal-lsp-server-binary/12173/4
