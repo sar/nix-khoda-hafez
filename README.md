@@ -5,10 +5,10 @@
 ---
     
 ### What I think the Nix files here need to do is:
-1. [Download pfsense](https://github.com/brodyck/nix-khoda-hafez/blob/2eff391b877adc2cd1a2e9803b8884c910067a2f/cfg/virtualisation/vms/pfsense.nix#L32)
+1. Download pfsense
 2. Check it against the provided sha256 file
 3. Create a raw image of specified size inside specified directory
-4. [Create libvirt](https://github.com/brodyck/nix-khoda-hafez/blob/2eff391b877adc2cd1a2e9803b8884c910067a2f/cfg/virtualisation/vms/pfsense.nix#L50) xml [configuration file](https://github.com/brodyck/nix-khoda-hafez/blob/2eff391b877adc2cd1a2e9803b8884c910067a2f/cfg/virtualisation/vms/pfsense.xml)
+4. Create libvirt xml [configuration file](https://github.com/brodyck/nix-khoda-hafez/blob/2eff391b877adc2cd1a2e9803b8884c910067a2f/cfg/virtualisation/vms/pfsense.xml)
 5. Use a direct console (not IP) to run commands on the VM host
     - Console will likely be a wrapper for virsh commands, if not the API
     - Have to figure out what exactly can be done from CLI in pfsense, and how    
