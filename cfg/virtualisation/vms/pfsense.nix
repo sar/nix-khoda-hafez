@@ -176,9 +176,9 @@ let
 
       in
         ''
-          uuid="$(${virsh}/bin/virsh domuuid '${vmName}' || true)"
-          ${virsh}/bin/virsh define <(sed "s/UUID/$uuid/" '${xml}')
-          ${virsh}/bin/virsh start '${vmName}'
+          uuid="$(${virsh} domuuid '${vmName}' || true)"
+          ${virsh} define <(sed "s/UUID/$uuid/" '${xml}')
+          ${virsh} start '${vmName}'
         '';
 
     preStop = ''
