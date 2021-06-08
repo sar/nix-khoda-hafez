@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+export NIXPKGS=/nix/nixpkgs
+nixos-rebuild -I nixpkgs=$NIXPKGS switch

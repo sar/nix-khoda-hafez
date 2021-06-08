@@ -9,11 +9,6 @@
     PATH=$PATH:/home/brody/minecraft
     '';
 
-
-
-
-
-
     promptInit = ''
       PATH=$PATH:/home/brody/minecraft    
       shopt -s histappend
@@ -21,6 +16,7 @@
       HISTSIZE=10000
       HISTFILESIZE=20000
       shopt -s checkwinsize
+      alias higrep="history | grep"
       function chmodstuff(){
         local typeOf="''${1:-nothing}"
         local topDir="''${2:-nothing}"

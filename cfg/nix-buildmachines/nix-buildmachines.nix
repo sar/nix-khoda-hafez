@@ -24,13 +24,13 @@
       }
       {
         hostName = "bidaya";
-	      system = "x86_64-linux";
-	      speedFactor = 2;
-	      maxJobs = 8;
-	      sshUser = "root";
-	      sshKey = "/root/.ssh/id_builder-khoda-hafez";
+        system = "x86_64-linux";
+        speedFactor = 2;
+        maxJobs = 8;
+        sshUser = "root";
+        sshKey = "/root/.ssh/id_builder-khoda-hafez";
         supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ];
-	      mandatoryFeatures = [ ];
+        mandatoryFeatures = [ ];
       }      
     ];
     distributedBuilds = true;

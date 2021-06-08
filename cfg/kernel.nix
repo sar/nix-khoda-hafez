@@ -1,7 +1,7 @@
 { config, lib, pkgs, options, ... }:
 {
   boot = {
-    kernelPackages = pkgs.linuxPackages_latest;
+    kernelPackages = pkgs.linuxPackages;
   };
   #/usr/src/linux-$(uname -r)
   environment = {

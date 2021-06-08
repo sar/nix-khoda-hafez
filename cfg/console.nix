@@ -22,7 +22,7 @@
 #      busybox
     ];
   };
-  services.mingetty = {
+  services.getty = {
     serialSpeed = [
       921600
     ];
