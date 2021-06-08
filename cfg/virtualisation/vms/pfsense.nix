@@ -176,9 +176,9 @@ let
 
       in
         ''
-          uuid="$(${getBin pkgs.libvirt}/bin/virsh domuuid '${vmName}' || true)"
-          ${getBin pkgs.libvirt}/bin/virsh define <(sed "s/UUID/$uuid/" '${xml}')
-          ${getBin pkgs.libvirt}/bin/virsh start '${vmName}'
+          uuid="$(${virsh}/bin/virsh domuuid '${vmName}' || true)"
+          ${virsh}/bin/virsh define <(sed "s/UUID/$uuid/" '${xml}')
+          ${virsh}/bin/virsh start '${vmName}'
         '';
 
     preStop = ''
