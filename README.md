@@ -1,9 +1,9 @@
-## Evanescence router
-# Redundant virtualized pfSense routers sitting on a NixOS host. 
+# Evanescence router
+### Redundant virtualized pfSense routers sitting on a NixOS host. 
 
 ---
 
-# Laws of this project:
+### Laws of this project:
 * If I click a button that should not effect service, it does not effect service
 * If I click a button that should effects service, it does not effect service
 * Scale up and down number of vms easily
