@@ -13,6 +13,7 @@
 * Drop-in replacement for home router
 * Guest OS and host OS must be accessable without a network
 * All OSes should be configured in a declaritive manner where possible
+
 I'm essentially stating things I hate about certain softwares. Going to stop now before this list gets too long.
 
 ---
