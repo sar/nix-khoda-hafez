@@ -1,6 +1,19 @@
-# Virtualized pfSense router sitting on a NixOS host. 
+## Evanescence router
+# Redundant virtualized pfSense routers sitting on a NixOS host. 
 
-   pfSense VM that handles WAN + LAN traffic, configurable from a NixOS host. This will eventually be runable from the NixOS installation USB.  
+---
+
+# Laws of this project:
+* If I click a button that should not effect service, it does not effect service
+* If I click a button that should effects service, it does not effect service
+* Scale up and down number of vms easily
+* Scale up and down number of routers easily
+* Updating host OS and kernel does not effect service
+* Updating guest OS does not effect serivce
+* Drop-in replacement for home router
+* Guest OS and host OS must be accessable without a network
+* All OSes should be configured in a declaritive manner where possible
+I'm essentially stating things I hate about certain softwares. Going to stop now before this list gets too long.
 
 ---
     
