@@ -17,14 +17,35 @@ let
   # https://discourse.nixos.org/t/is-there-a-way-to-work-with-files-outside-nix-in-nixops/3220
   # https://discourse.nixos.org/t/java-based-emacs-package-ejc-sql-expects-write-access-to-install-directory-need-workaround/8317
   # https://discourse.nixos.org/t/unable-to-use-gzip-in-derivation-to-package-crystal-lsp-server-binary/12173/4
-  downloadIsoGz = isoNameGz: {    
+
+  # lots of this can be replaced by a service directive of some sort that only runs the service when a condition is met.
+  # later, replace with template units.
+  
+  downloadIsoGz = isoNameGz: {
+    description = "Download the specified pfSense ISO file version.";
+    wantedBy = [ "multi-user.target" ];    
+    after = [
+      "network.target"
+      "libvirtd.service"
+    ];
+    bindsTo = [
+      "network.target"
+      "libvirtd.service"
+    ];    
+    before = [
+      "pfsense-vm-01.service"
+      "pfsense-vm-02.service"
+    ];
+    requires = [
+      "network.target"
+      "libvirtd.service"
+    ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = "yes";
     };
     restartIfChanged = true;
     script = ''
-    # lots of this can be replaced by a service directive of some sort that only runs the service when a condition is met.
       if ! [[ -f "${pfDir}/${isoGz}" ]]
       then
         set -x
@@ -65,18 +86,27 @@ let
     '';
   };
   
-  extractIso = isoLocation: {    
+  extractIso = isoLocation: {
+    description = "Extract the downloaded ISO file.";
+    wantedBy = [ "multi-user.target" ];
     after = [
+      "network.target"
       "libvirtd.service"
-      "libvirtd-pfsense-download.service"
+      "pfsense-download.service"
+    ];
+    bindsTo = [
+      "network.target"
+      "libvirtd.service"
+      "pfsense-download.service"
     ];
     before = [
-      "libvirtd-pfsense-vm-01.service"
-      "libvirtd-pfsense-vm-02.service"
+      "pfsense-vm-01.service"
+      "pfsense-vm-02.service"
     ];
     requires = [
+      "network.target"
       "libvirtd.service"
-      "libvirtd-pfsense-download.service"
+      "pfsense-download.service"
     ];
     serviceConfig = {
       Type = "oneshot";
@@ -97,15 +127,23 @@ let
 
   };
 
-  createDisk = rawLocation: {    
+  createDisk = rawLocation: {
+    description = "Create the .raw file used to store the VM OS.";
+    wantedBy = [ "multi-user.target" ];
     after = [
+      "network.target"
       "libvirtd.service"
     ];
+    bindsTo = [
+      "network.target"
+      "libvirtd.service"
+    ];    
     before = [
-      "libvirtd-pfsense-vm-01.service"
-      "libvirtd-pfsense-vm-02.service"
+      "pfsense-vm-01.service"
+      "pfsense-vm-02.service"
     ];
     requires = [
+      "network.target"
       "libvirtd.service"
     ];    
     serviceConfig = {
@@ -119,7 +157,6 @@ let
         printf "\n\nDisk '${rawLocation}.raw' already exists."
         exit 0
       else
-        #/storage/vm/pfsense/pfsense1.raw 20G
         ${qemu-img} create -f raw ${rawLocation}.raw 20G 
         if ! [[ -f "${rawLocation}.raw" ]]
         then
@@ -133,20 +170,32 @@ let
 
   };
 
-  buildvm = vmName: {    
-    after = [
+  buildvm = vmName: {
+    description = "Create and turn on the VM with virsh.";
+    wantedBy = [ "multi-user.target" ];
+    bindsTo = [
+      "network.target"
       "libvirtd.service"
-      "libvirtd-pfsense-download.service"
-      "libvirtd-pfsense-extract.service"
-      "libvirtd-pfsense-disk-01.service"
-      "libvirtd-pfsense-disk-02.service"
+      "pfsense-download.service"
+      "pfsense-extract.service"
+      "pfsense-disk-01.service"
+      "pfsense-disk-02.service"      
+    ];    
+    after = [
+      "network.target"
+      "libvirtd.service"
+      "pfsense-download.service"
+      "pfsense-extract.service"
+      "pfsense-disk-01.service"
+      "pfsense-disk-02.service"
     ];
     requires = [
+      "network.target"
       "libvirtd.service"
-      "libvirtd-pfsense-download.service"
-      "libvirtd-pfsense-extract.service"
-      "libvirtd-pfsense-disk-01.service"
-      "libvirtd-pfsense-disk-02.service"
+      "pfsense-download.service"
+      "pfsense-extract.service"
+      "pfsense-disk-01.service"
+      "pfsense-disk-02.service"
     ];
     serviceConfig = {
       Type = "oneshot";
@@ -195,10 +244,10 @@ in
 {
 #  environment = { systemPackages = with pkgs; [ nawk ]; };
 
-  systemd.services.libvirtd-pfsense-download = downloadIsoGz "${pfDir}/${iso}";
-  systemd.services.libvirtd-pfsense-extract = extractIso "${pfDir}/${isoGz}";
-  systemd.services.libvirtd-pfsense-disk-01 = createDisk "${pfDir}/${routerName}-01";
-  systemd.services.libvirtd-pfsense-disk-02 = createDisk "${pfDir}/${routerName}-02";
-  systemd.services.libvirtd-pfsense-vm-01 = buildvm "${routerName}-01";
-  systemd.services.libvirtd-pfsense-vm-02 = buildvm "${routerName}-02";
+  systemd.services.pfsense-download = downloadIsoGz "${pfDir}/${iso}";
+  systemd.services.pfsense-extract = extractIso "${pfDir}/${isoGz}";
+  systemd.services.pfsense-disk-01 = createDisk "${pfDir}/${routerName}-01";
+  systemd.services.pfsense-disk-02 = createDisk "${pfDir}/${routerName}-02";
+  systemd.services.pfsense-vm-01 = buildvm "${routerName}-01";
+  systemd.services.pfsense-vm-02 = buildvm "${routerName}-02";
 }
