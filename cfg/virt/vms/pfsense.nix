@@ -185,7 +185,54 @@ let
     '';
   };
 
-  buildvm = rawLocation: vmName: vmNumber: diskType: {
+
+  createNet = vmNetName: {
+    description = "Create the ${vmNetName} network used for the VM.";
+    wantedBy = [ "multi-user.target" ];
+    after = [
+      "network.target"
+      "libvirtd.service"
+    ];
+    bindsTo = [
+      "network.target"
+      "libvirtd.service"
+    ];    
+    before = [
+      "pfsense-extract.service"      
+#      "pfsense-${vmName}-${vmNumber}.service"
+#      "setPermissions.service"
+    ];
+    requires = [
+      "network.target"
+      "libvirtd.service"
+    ];    
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = "no";
+    };
+    restartIfChanged = true;
+    
+    script =
+      let
+        xml = pkgs.substituteAll {
+          src = ./. + "/network.xml";
+          text = ''<network>
+  <name>${vmNetName}</name>
+  <forward mode="bridge"/>
+  <bridge name="${vmNetName}"/>
+</network>'';
+        };
+      in
+        ''
+	      cat ${xml}
+        ${virsh} net-define <(cat '${xml}' || true) || true
+        ${virsh} net-autostart ${vmNetName} || true
+        ${virsh} net-start ${vmNetName} || true
+    '';
+  };
+
+  
+  buildvm = rawLocation: vmName: vmNumber: ipOct: diskType: {
     description = "Create and turn on the VM with virsh.";
     wantedBy = [ "multi-user.target" ];
     bindsTo = [
@@ -233,48 +280,48 @@ let
 #          net_int_target_dev = "int-${vmName}-${vmNumber}";
           
           net_int = ''  <interface type="bridge">
-    <mac address="68:05:c4:20:69:23"/>
-    <source bridge="int-${vmName}"/>
-    <target dev="int-${vmName}-${vmNumber}"/>
-    <virtualport type="openvswitch"/>
-    <model type="virtio"/>
-  </interface>'';
+      <mac address="68:05:c4:20:69:23"/>
+      <source bridge="int-${vmName}"/>
+      <target dev="int-${vmName}-${vmNumber}"/>
+      <virtualport type="openvswitch"/>
+      <model type="virtio"/>
+    </interface>'';
 
 #          net_man_source_dev = "man-${vmName}";
 #          net_man_mac_address = "68:05:c4:20:69:22";
 #          net_man_target_dev = "man-${vmName}-${vmNumber}";
           
           net_man = ''  <interface type="bridge">
-    <mac address="68:05:c4:20:69:22"/>
-    <source bridge="man-${vmName}"/>
-    <target dev="man-${vmName}-${vmNumber}"/>
-    <virtualport type="openvswitch"/>
-    <model type="virtio"/>
-  </interface>'';
+      <mac address="68:05:c4:20:69:22"/>
+      <source bridge="man-${vmName}"/>
+      <target dev="man-${vmName}-${vmNumber}"/>
+      <virtualport type="openvswitch"/>
+      <model type="virtio"/>
+    </interface>'';
 
 #          net_lan_source_dev = "lan-${vmName}";
 #          net_lan_mac_address = "68:05:c4:20:69:21";
 #          net_lan_target_dev = "lan-${vmName}-${vmNumber}";
           
           net_lan = ''  <interface type="bridge">
-    <mac address="68:05:c4:20:69:21"/>
-    <source bridge="lan-${vmName}"/>
-    <target dev="lan-${vmName}-${vmNumber}"/>
-    <virtualport type="openvswitch"/>
-    <model type="virtio"/>
-  </interface>'';
+      <mac address="68:05:c4:20:69:21"/>
+      <source bridge="lan-${vmName}"/>
+      <target dev="lan-${vmName}-${vmNumber}"/>
+      <virtualport type="openvswitch"/>
+      <model type="virtio"/>
+    </interface>'';
 
 #          net_wan_source_dev = "wan-${vmName}";
 #          net_wan_mac_address = "68:05:c4:20:69:20";
 #          net_wan_target_dev = "wan-${vmName}-${vmNumber}";
 
           net_wan = ''  <interface type="bridge">
-    <mac address="68:05:c4:20:69:20"/>
-    <source bridge="wan-${vmName}"/>
-    <target dev="wan-${vmName}-${vmNumber}"/>
-    <virtualport type="openvswitch"/>
-    <model type="virtio"/>
-  </interface>'';
+      <mac address="68:05:c4:20:69:20"/>
+      <source bridge="wan-${vmName}"/>
+      <target dev="wan-${vmName}-${vmNumber}"/>
+      <virtualport type="openvswitch"/>
+      <model type="virtio"/>
+    </interface>'';
           
           disk_img = "${rawLocation}/${vmName}-${vmNumber}.${diskType}";
           disk_iso = "${rawLocation}/${iso}";
@@ -312,6 +359,10 @@ in
   systemd.services.pfsense-extract = extractIso "${pfDir}/${isoGz}";
   systemd.services.pfsense-disk-01 = createDisk "${pfDir}" "${routerName}" "01" "raw";
   systemd.services.pfsense-disk-02 = createDisk "${pfDir}" "${routerName}" "02" "raw";
-  systemd.services.pfsense-vm-01 = buildvm "${pfDir}" "${routerName}" "01" "raw";
-  systemd.services.pfsense-vm-02 = buildvm "${pfDir}" "${routerName}" "02" "raw";
+#  systemd.services."int-${routerName}" = createNet "int-${routerName}";
+#  systemd.services."man-${routerName}" = createNet "man-${routerName}";  
+#  systemd.services."lan-${routerName}" = createNet "lan-${routerName}";
+#  systemd.services."wan-${routerName}" = createNet "wan-${routerName}";
+  systemd.services.pfsense-vm-01 = buildvm "${pfDir}" "${routerName}" "01" "2" "raw";
+  systemd.services.pfsense-vm-02 = buildvm "${pfDir}" "${routerName}" "02" "3" "raw";
 }

@@ -31,7 +31,8 @@
   systemd.services."serial-getty@ttyUSB0" = {
     enable = true;
     wantedBy = [ "getty.target" ];
-    script = "agetty -m -L 921600 ttyUSB0 vt100";
+    script = ''nice agetty -m -L 921600 ttyUSB0 vt100
+    '';
 #    scriptArgs
     serviceConfig.Restart = "always";
 #    reloadIfChanged = true;   

@@ -21,15 +21,15 @@ in
 
   virtualisation = {
     lxd = {
-      enable = true;
+      enable = false;
       zfsSupport = true;
       recommendedSysctlSettings = true;
       lxcPackage = pkgs.lxc;
     };
 
     lxc = {
-      enable = true;
-      lxcfs.enable = true;
+      enable = false;
+      lxcfs.enable = false;
       systemConfig = "";
       defaultConfig = "";
       usernetConfig = "";

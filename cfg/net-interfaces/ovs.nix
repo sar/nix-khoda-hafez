@@ -30,6 +30,7 @@
   # vswitches is an attribute set
   networking = {
     vswitches = {
+
       # internal vm-to-vm
       int-pfsrt = {
         interfaces = { };
@@ -40,7 +41,11 @@
 
       # management
       man-pfsrt = {
-        interfaces = { };
+        interfaces = {
+          man-tun0 = {
+            type = "system";
+          };
+        };
 	      extraOvsctlCmds = ''
           set bridge man-pfsrt other-config:hwaddr=68:05:c4:20:69:12
         '';

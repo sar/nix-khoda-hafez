@@ -23,6 +23,21 @@ in
   networking = {
     bridges.br-net0.interfaces = [ "net0" ];
     interfaces = {
+
+      # management tunnel
+      man-tun0 = {
+#        macAddress = "2c:f0:5d:42:06:91";
+#        useDHCP = false;
+        virtual = true;
+        virtualType = "tun";
+        ipv4 = {
+          addresses = [
+            { address = "10.69.4.20"; prefixLength = 24; }
+          ];
+        };
+      };
+
+      # ethernet interface
       net0 = {
         useDHCP = true;
       };
