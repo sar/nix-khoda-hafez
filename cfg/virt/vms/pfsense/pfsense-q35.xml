@@ -6,7 +6,7 @@
   <currentMemory unit="KiB">4194304</currentMemory>
   <vcpu placement="static">4</vcpu>
   <os>
-    <type arch="x86_64" machine="@ovmf_q35@">hvm</type>
+    <type arch="x86_64" machine="@machine_type@">hvm</type>
     <loader readonly="yes" type="pflash">/run/libvirt/nix-ovmf/OVMF_CODE.fd</loader>
     <nvram>/var/lib/libvirt/qemu/nvram/pfsense_VARS.fd</nvram>
     <bootmenu enable="yes"/>

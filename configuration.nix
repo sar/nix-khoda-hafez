@@ -102,6 +102,7 @@
       libsysfs
       #      i40e
       fzf
+      lsof
     ];  
   };
   

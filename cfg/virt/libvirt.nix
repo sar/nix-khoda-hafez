@@ -7,46 +7,43 @@ let
 nixInFolder = dir: map (x: dir + "/" + x) (attrNames (filterAttrs (name: _: hasSuffix ".nix" name) (readDir dir)));
 in
 {
-#  imports = nixInFolder "/etc/nixos/cfg/virtualisation/lxc-containers";
+  imports = nixInFolder "/etc/nixos/cfg/virt/vms";
+
   environment = {
     systemPackages = with pkgs; [
-      lxc
-      lxcfs
-      lxd
-      distrobuilder
+      libvirt
+      qemu
+      OVMF-CSM
+      OVMF
       pciutils
-      apparmor-kernel-patches
     ];
   };
 
   virtualisation = {
-    lxd = {
+    libvirtd = {
       enable = true;
-      zfsSupport = true;
-      recommendedSysctlSettings = true;
-      lxcPackage = pkgs.lxc;
-    };
-
-    lxc = {
-      enable = true;
-      lxcfs.enable = true;
-      systemConfig = "";
-      defaultConfig = "";
-      usernetConfig = "";
+      qemuOvmf = true;
+      extraConfig = "\n
+        unix_sock_group = \"libvirt\"\n
+	unix_sock_rw_perms = \"0770\"";
     };
   };
   
   networking.firewall = {
     allowedTCPPorts = [
+      5900 #vnc
+      5901 #spice
     ];
     allowedUDPPorts = [
+      5900 #vnc
+      5901 #spice
     ];    
   };
 
   users.groups = {
-#    libvirt = {
-#      members = [ "brody" ];
-#    };
+    libvirt = {
+      members = [ "brody" ];
+    };
   };
 
 }

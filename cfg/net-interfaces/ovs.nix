@@ -30,36 +30,73 @@
   # vswitches is an attribute set
   networking = {
     vswitches = {
-      pfsense-wan = {
-        interfaces = {
-          sfp3 = { };
-        };	
-        extraOvsctlCmds = ''
-          set bridge pfsense-wan other-config:hwaddr=68:05:c4:20:69:10
+      # internal vm-to-vm
+      int-pfsrt = {
+        interfaces = { };
+	      extraOvsctlCmds = ''
+          set bridge int-pfsrt other-config:hwaddr=68:05:c4:20:69:13
         '';
       };
-      pfsense-lan = {
+
+      # management
+      man-pfsrt = {
+        interfaces = { };
+	      extraOvsctlCmds = ''
+          set bridge man-pfsrt other-config:hwaddr=68:05:c4:20:69:12
+        '';
+      }; 
+     
+      lan-pfsrt = {
         interfaces = {
-          sfp0 = { };
+          sfp0 = {
+ 	          type = "system";
+	        };
         };	
         extraOvsctlCmds = ''
-          set bridge pfsense-lan other-config:hwaddr=68:05:c4:20:69:11
+          set bridge lan-pfsrt other-config:hwaddr=68:05:c4:20:69:11
+        '';
+      };
+      
+      wan-pfsrt = {
+        interfaces = {
+          sfp3 = {
+ 	          type = "system";
+	        };
+        };	
+        extraOvsctlCmds = ''
+          set bridge wan-pfsrt other-config:hwaddr=68:05:c4:20:69:10
         '';
       };
     };
 
     interfaces = {
-      pfsense-wan = {
+      # internal vm-to-vm
+      int-pfsrt = {
         useDHCP = false;
-#	macAddress = "68:05:c4:20:69:00";
+        #	macAddress = "68:05:c4:20:69:03";
       };
-      pfsense-lan = {
+      
+      # management
+      man-pfsrt = {
         useDHCP = false;
-#	macAddress = "68:05:c4:20:69:01";
+        #	macAddress = "68:05:c4:20:69:02";
       };
+      
+      lan-pfsrt = {
+        useDHCP = false;
+        #	macAddress = "68:05:c4:20:69:01";
+      };
+      
+      wan-pfsrt = {
+        useDHCP = false;
+        #	macAddress = "68:05:c4:20:69:00";
+      };
+
+      # This interface doesn't do anything.
       ovs-system = {
         useDHCP = false;
       };
+
     };
   };
 
@@ -67,12 +104,12 @@
   # useful commands:
   # udevadm info /sys/class/net/enp3s0
   # journalctl -ex | grep udev
-#  services.udev = {
-#    path = [
-#      /bin
-#      /usr/bin
-#    ];
-#    extraRules = ''
-#  '';
-#  };
+  #  services.udev = {
+  #    path = [
+  #      /bin
+  #      /usr/bin
+  #    ];
+  #    extraRules = ''
+  #  '';
+  #  };
 }

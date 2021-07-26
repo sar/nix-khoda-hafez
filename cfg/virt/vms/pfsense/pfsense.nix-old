@@ -4,6 +4,8 @@ let
   version = "2.5.1";
   pfDir = "/storage/vm/pfsense";
   iso = "pfSense-CE-${version}-RELEASE-amd64.iso";
+  # i440fx or q35
+  machineType = "i440fx";
   isoGz = "${iso}.gz";
   isoSha256 = "${isoGz}.sha256";
   routerName = "pfsrt";
@@ -12,6 +14,8 @@ let
   gzip = "${pkgs.gzip}/bin/gzip";
   virsh = "${getBin pkgs.libvirt}/bin/virsh";
   qemu-img = "${pkgs.qemu}/bin/qemu-img";
+#  q35Model = "pc-q35-5.1";
+#  i440fxModel = "pc-i440fx-6.0";
 
   # info on out-of-store manipulation
   # https://discourse.nixos.org/t/is-there-a-way-to-work-with-files-outside-nix-in-nixops/3220
@@ -20,6 +24,12 @@ let
 
   # lots of this can be replaced by a service directive of some sort that only runs the service when a condition is met.
   # later, replace with template units.
+
+  # Making it a module is what I'd prefer to do:
+  # https://nixos.wiki/wiki/NixOS:extend_NixOS
+
+  # Can't use virtio disks with q35 until freebsd 13?
+  # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=236922
   
   downloadIsoGz = isoNameGz: {
     description = "Download the specified pfSense ISO file version.";
@@ -35,6 +45,7 @@ let
     before = [
       "pfsense-vm-01.service"
       "pfsense-vm-02.service"
+      "setPermissions.service"
     ];
     requires = [
       "network.target"
@@ -102,6 +113,7 @@ let
     before = [
       "pfsense-vm-01.service"
       "pfsense-vm-02.service"
+      "setPermissions.service"      
     ];
     requires = [
       "network.target"
@@ -113,6 +125,7 @@ let
       RemainAfterExit = "yes";
     };
     restartIfChanged = true;
+    
     script = ''
       if [[ -f "${isoLocation}" ]]
       then
@@ -123,10 +136,9 @@ let
         exit 1
       fi
       exit 1
-    '';    
-
+    '';
   };
-
+    
   createDisk = rawLocation: {
     description = "Create the .raw file used to store the VM OS.";
     wantedBy = [ "multi-user.target" ];
@@ -141,6 +153,7 @@ let
     before = [
       "pfsense-vm-01.service"
       "pfsense-vm-02.service"
+      "setPermissions.service"
     ];
     requires = [
       "network.target"
@@ -151,6 +164,7 @@ let
       RemainAfterExit = "yes";
     };
     restartIfChanged = true;
+    
     script = ''
       if [[ -f "${rawLocation}.raw" ]]
       then
@@ -166,8 +180,7 @@ let
         exit 0
       fi
       exit 1
-    '';    
-
+    '';
   };
 
   buildvm = vmName: {
@@ -179,7 +192,7 @@ let
       "pfsense-download.service"
       "pfsense-extract.service"
       "pfsense-disk-01.service"
-      "pfsense-disk-02.service"      
+      "pfsense-disk-02.service"
     ];    
     after = [
       "network.target"
@@ -188,6 +201,7 @@ let
       "pfsense-extract.service"
       "pfsense-disk-01.service"
       "pfsense-disk-02.service"
+      "setPermissions.service"
     ];
     requires = [
       "network.target"
@@ -196,6 +210,7 @@ let
       "pfsense-extract.service"
       "pfsense-disk-01.service"
       "pfsense-disk-02.service"
+      "setPermissions.service"
     ];
     serviceConfig = {
       Type = "oneshot";
@@ -206,9 +221,10 @@ let
     script =
       let
         xml = pkgs.substituteAll {
-          src = ./pfsense.xml;
+          src = "/etc/nixos/cfg/virt/vms/pfsense.xml";
           name = vmName;
-          ovmf_q35 = "pc-q35-5.1";
+          ovmf_q35 = q35Model;
+          i440fx = i440fxModel;
           net_lan_source_dev = "pfsense-lan";
           net_lan_mac_address = "68:05:c4:20:69:21";
           net_wan_source_dev = "pfsense-wan";
@@ -216,7 +232,6 @@ let
           disk_img = "${pfDir}/${vmName}.raw";
           disk_iso = "${pfDir}/${iso}";
         };
-
       in
         ''
           uuid="$(${virsh} domuuid '${vmName}' || true)"
@@ -243,7 +258,7 @@ in
 
 {
 #  environment = { systemPackages = with pkgs; [ nawk ]; };
-
+  systemd.services.pfsense-setPermission = setPermission ;
   systemd.services.pfsense-download = downloadIsoGz "${pfDir}/${iso}";
   systemd.services.pfsense-extract = extractIso "${pfDir}/${isoGz}";
   systemd.services.pfsense-disk-01 = createDisk "${pfDir}/${routerName}-01";

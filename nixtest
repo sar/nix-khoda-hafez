@@ -6,4 +6,4 @@
 #git cherry-pick adc368d2fc7dd74beb8486ff72880ed0212abb0d
 #cd /etc/nixos
 export NIXPKGS=/nix/nixpkgs
-nixos-rebuild -I nixpkgs=$NIXPKGS switch
+nixos-rebuild -I nixpkgs=$NIXPKGS test

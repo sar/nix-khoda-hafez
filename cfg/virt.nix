@@ -7,7 +7,7 @@ let
 nixInFolder = dir: map (x: dir + "/" + x) (attrNames (filterAttrs (name: _: hasSuffix ".nix" name) (readDir dir)));
 in
 {
-  imports = nixInFolder "/etc/nixos/cfg/virtualisation";
+  imports = nixInFolder "/etc/nixos/cfg/virt";
   services = {
     irqbalance.enable = false;
   };
