@@ -1,10 +1,10 @@
 { config, lib, pkgs, ... }:
 with lib;
 let
-  version = "2.5.1";
+#  version = "2.5.1";
   pfDir = "/storage/vm/pfsense";
-  iso = "pfSense-CE-${version}-RELEASE-amd64.iso";
-#  iso = "pfSense-CE-memstick-serial-2.5.2-RELEASE-amd64.img";
+#  iso = "pfSense-CE-2.5.2-RELEASE-amd64.iso";
+  iso = "pfSense-CE-memstick-serial-2.5.2-RELEASE-amd64.img";
   # i440fx or q35
   machineType = "i440fx";
   isoGz = "${iso}.gz";
@@ -15,6 +15,7 @@ let
   gzip = "${pkgs.gzip}/bin/gzip";
   virsh = "${getBin pkgs.libvirt}/bin/virsh";
   qemu-img = "${pkgs.qemu}/bin/qemu-img";
+  ovs-vsctl = "${pkgs.openvswitch}/bin/ovs-vsctl";
   q35Model = "pc-q35-5.1";
   i440fxModel = "pc-i440fx-6.0";
 
@@ -141,7 +142,7 @@ let
     '';
   };
     
-  createDisk = rawLocation: vmName: vmNumber: diskType: {
+  createDisk = vmName: vmNumber: diskType: rawLocation: {
     description = "Create the .raw file used to store the VM OS.";
     wantedBy = [ "multi-user.target" ];
     after = [
@@ -232,16 +233,12 @@ let
   };
 
   
-  buildvm = rawLocation: vmName: vmNumber: ipOct: diskType: {
+  buildvm = vmName: vmNumber: diskType: rawLocation: {
     description = "Create and turn on the VM with virsh.";
     wantedBy = [ "multi-user.target" ];
     bindsTo = [
       "network.target"
       "libvirtd.service"
-#      "pfsense-download.service"
-#      "pfsense-extract.service"
-#      "pfsense-disk-01.service"
-#      "pfsense-disk-02.service"
     ];    
     after = [
       "network.target"
@@ -249,8 +246,6 @@ let
       "pfsense-download.service"
       "pfsense-extract.service"
       "pfsense-disk-${vmNumber}.service"
-#      "pfsense-disk-02.service"
-#      "setPermissions.service"
     ];
     requires = [
       "network.target"
@@ -258,8 +253,6 @@ let
       "pfsense-download.service"
       "pfsense-extract.service"
       "pfsense-disk-${vmNumber}.service"
-#      "pfsense-disk-02.service"
-#      "setPermissions.service"
     ];
     serviceConfig = {
       Type = "oneshot";
@@ -275,60 +268,71 @@ let
           ovmf_q35 = q35Model;
           i440fx = i440fxModel;
 
-#          net_int_source_dev = "int-${vmName}";
-#          net_int_mac_address = "68:05:c4:20:69:23";
-#          net_int_target_dev = "int-${vmName}-${vmNumber}";
-          
           net_int = ''  <interface type="bridge">
-      <mac address="68:05:c4:20:69:23"/>
+      <mac address="68:${vmNumber}:c4:20:69:23"/>
       <source bridge="int-${vmName}"/>
       <target dev="int-${vmName}-${vmNumber}"/>
       <virtualport type="openvswitch"/>
       <model type="virtio"/>
     </interface>'';
 
-#          net_man_source_dev = "man-${vmName}";
-#          net_man_mac_address = "68:05:c4:20:69:22";
-#          net_man_target_dev = "man-${vmName}-${vmNumber}";
-          
           net_man = ''  <interface type="bridge">
-      <mac address="68:05:c4:20:69:22"/>
+      <mac address="68:${vmNumber}:c4:20:69:22"/>
       <source bridge="man-${vmName}"/>
       <target dev="man-${vmName}-${vmNumber}"/>
       <virtualport type="openvswitch"/>
       <model type="virtio"/>
     </interface>'';
 
-#          net_lan_source_dev = "lan-${vmName}";
-#          net_lan_mac_address = "68:05:c4:20:69:21";
-#          net_lan_target_dev = "lan-${vmName}-${vmNumber}";
-          
           net_lan = ''  <interface type="bridge">
-      <mac address="68:05:c4:20:69:21"/>
+      <mac address="68:${vmNumber}:c4:20:69:21"/>
       <source bridge="lan-${vmName}"/>
       <target dev="lan-${vmName}-${vmNumber}"/>
       <virtualport type="openvswitch"/>
       <model type="virtio"/>
     </interface>'';
 
-#          net_wan_source_dev = "wan-${vmName}";
-#          net_wan_mac_address = "68:05:c4:20:69:20";
-#          net_wan_target_dev = "wan-${vmName}-${vmNumber}";
-
           net_wan = ''  <interface type="bridge">
-      <mac address="68:05:c4:20:69:20"/>
+      <mac address="68:${vmNumber}:c4:20:69:20"/>
       <source bridge="wan-${vmName}"/>
       <target dev="wan-${vmName}-${vmNumber}"/>
       <virtualport type="openvswitch"/>
       <model type="virtio"/>
     </interface>'';
-          
-          disk_img = "${rawLocation}/${vmName}-${vmNumber}.${diskType}";
-          disk_iso = "${rawLocation}/${iso}";
+
+          disk_primary = ''  <disk type="file" device="disk">
+      <driver name="qemu" type="${diskType}"/>
+      <source file="${rawLocation}/${vmName}-${vmNumber}.${diskType}"/>
+      <target dev="vda" bus="virtio"/>
+      <boot order="1"/>
+      <address type="pci"/>
+    </disk>'';
+
+          disk_installer =''  <disk type="file" device="disk">
+      <driver name="qemu" type="raw"/>
+      <source file="${rawLocation}/${iso}"/>
+      <target dev="vdb" bus="virtio"/>
+      <readonly/>
+      <boot order="2"/>
+      <address type="pci"/>
+    </disk>'';
+
+#          disk_installer =''  <disk type="file" device="cdrom">
+#      <driver name="qemu" type="iso"/>
+#      <source file="${rawLocation}/${iso}"/>
+#      <target dev="sdb" bus="virtio"/>
+#      <readonly/>
+#      <boot order="2"/>
+#      <address type="pci"/>
+#    </disk>'';
+
         };
       in
         ''
-	  cat ${xml}
+          ${ovs-vsctl} add-port man-pfsrt lan-pfsrt-${vmNumber}
+          ${ovs-vsctl} add-port man-pfsrt wan-pfsrt-${vmNumber}
+          ${ovs-vsctl} add-port man-pfsrt man-pfsrt-${vmNumber}
+          ${ovs-vsctl} add-port man-pfsrt int-pfsrt-${vmNumber}
           uuid="$(${virsh} domuuid '${vmName}-${vmNumber}' || true)"
           ${virsh} define <(sed "s/UUID/$uuid/" '${xml}')
           ${virsh} reset '${vmName}-${vmNumber}' || echo true
@@ -336,15 +340,15 @@ let
         '';
 
     preStop = ''
-        ${virsh} destroy '${vmName}-${vmNumber}'
-        ${virsh} undefine --nvram --managed-save --storage ${rawLocation}/${vmName}-${vmNumber}.${diskType} --domain ${vmName}-${vmNumber}
+        ${virsh} destroy '${vmName}-${vmNumber}' || true
+        ${virsh} undefine --nvram --managed-save --storage ${rawLocation}/${vmName}-${vmNumber}.${diskType} --domain ${vmName}-${vmNumber} || true
         let "timeout = $(date +%s) + 120"
         while [ "$(${virsh} list --name | grep --count '^${vmName}-${vmNumber}$')" -gt 0 ]; do
           if [ "$(date +%s)" -ge "$timeout" ]; then
             # Meh, we warned it...
-            ${virsh} destroy '${vmName}-${vmNumber}'
-            ${virsh} undefine --nvram --managed-save --storage ${rawLocation}/${vmName}-${vmNumber}.${diskType} --domain ${vmName}-${vmNumber}
-            rm -rf /storage/vms/pfsense/${vmName}-${vmNumber}.raw
+            ${virsh} destroy '${vmName}-${vmNumber}' || true
+            ${virsh} undefine --nvram --managed-save --storage ${rawLocation}/${vmName}-${vmNumber}.${diskType} --domain ${vmName}-${vmNumber} || true
+            rm -rf /storage/vms/pfsense/${vmName}-${vmNumber}.raw || true
           else
             # The machine is still running, let's give it some time to shut down
             sleep 0.5
@@ -352,17 +356,81 @@ let
         done
     '';
   };
+
+  # predictable dhcp lease for management interfaces
+  manDhcpLease = vmName: vmNumber: {
+    ethernetAddress = "68:${vmNumber}:c4:20:69:22";
+    hostName = "${vmName}-${vmNumber}";
+    ipAddress = "10.69.4.1${vmNumber}";
+  };
+  
+
+    
 in
 
 {
   systemd.services.pfsense-download = downloadIsoGz "${pfDir}/${iso}";
   systemd.services.pfsense-extract = extractIso "${pfDir}/${isoGz}";
-  systemd.services.pfsense-disk-01 = createDisk "${pfDir}" "${routerName}" "01" "raw";
-  systemd.services.pfsense-disk-02 = createDisk "${pfDir}" "${routerName}" "02" "raw";
+  systemd.services.pfsense-disk-01 = createDisk "${routerName}" "01" "raw" "${pfDir}";
+  systemd.services.pfsense-disk-02 = createDisk "${routerName}" "02" "raw" "${pfDir}";
 #  systemd.services."int-${routerName}" = createNet "int-${routerName}";
 #  systemd.services."man-${routerName}" = createNet "man-${routerName}";  
 #  systemd.services."lan-${routerName}" = createNet "lan-${routerName}";
 #  systemd.services."wan-${routerName}" = createNet "wan-${routerName}";
-  systemd.services.pfsense-vm-01 = buildvm "${pfDir}" "${routerName}" "01" "2" "raw";
-  systemd.services.pfsense-vm-02 = buildvm "${pfDir}" "${routerName}" "02" "3" "raw";
+  systemd.services.pfsense-vm-01 = buildvm "${routerName}" "01" "raw" "${pfDir}";
+  systemd.services.pfsense-vm-02 = buildvm "${routerName}" "02" "raw" "${pfDir}";
+
+  services.dhcpd4 = {
+    enable = true;
+    interfaces = [ "man-pfsrt" ];
+    authoritative = true;
+    extraConfig = ''
+      option subnet-mask 255.255.255.0;
+      option broadcast-address 10.69.4.255;
+      option domain-name-servers 8.8.8.8;
+      subnet 10.69.4.0 netmask 255.255.255.0 {
+        range 10.69.4.0 10.69.4.254;
+      }
+    '';
+    machines = let
+      vm1 = manDhcpLease "${routerName}" "01";
+      vm2 = manDhcpLease "${routerName}" "02";
+    in
+      [ vm1 vm2 ];
+  };
+
+  
+
+#  printf "vt100\n" > /dev/pts/0
+#  printf "\n" > /dev/pts/0
+#  printf "\n" > /dev/pts/0
+#  printf "\n" > /dev/pts/0
+#  printf "\n" > /dev/pts/0
+#  printf 'S' > /dev/pts/0
+#  printf "\n" > /dev/pts/0
+#  printf '\b\b' > /dev/pts/0
+#  printf '4g' > /dev/pts/0
+#  printf '\t' > /dev/pts/0
+#  printf "\n" > /dev/pts/0
+#  printf '^[1B' > /dev/pts/0
+#  printf "\n" > /dev/pts/0
+#  printf "\n" > /dev/pts/0
+#  printf " " > /dev/pts/0
+#  printf "\n" > /dev/pts/0
+#  printf "\t" > /dev/pts/0
+#  printf "\n" > /dev/pts/0
+#  printf "\t" > /dev/pts/0
+#  printf "\n" > /dev/pts/0
+#
+#  # reboot
+#  
+#  printf "n\n" > /dev/pts/0
+#  printf "vtnet3\n" > /dev/pts/0 # wan interface
+#  printf "\n" > /dev/pts/0  
+#  printf "y\n" > /dev/pts/0
+#  
+#  # reboot
+#  
+#  printf "8\n" > /dev/pts/0
+
 }

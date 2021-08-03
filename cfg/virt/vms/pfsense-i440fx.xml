@@ -33,21 +33,8 @@
   </pm>
   <devices>
     <emulator>/run/libvirt/nix-emulators/qemu-system-x86_64</emulator>
-    <disk type="file" device="cdrom">
-      <driver name="qemu" type="raw"/>
-      <source file="@disk_iso@"/>
-      <target dev="sda" bus="sata"/>
-      <readonly/>
-      <boot order="2"/>
-      <address type="drive" controller="0" bus="0" target="0" unit="0"/>
-    </disk>
-    <disk type="file" device="disk">
-      <driver name="qemu" type="raw"/>
-      <source file="@disk_img@"/>
-      <target dev="vda" bus="virtio"/>
-      <boot order="1"/>
-      <address type="pci" domain="0x0000" bus="0x00" slot="0x09" function="0x0"/>
-    </disk>
+    @disk_installer@
+    @disk_primary@
     <controller type="usb" index="0" model="ich9-ehci1">
       <address type="pci" domain="0x0000" bus="0x00" slot="0x06" function="0x7"/>
     </controller>

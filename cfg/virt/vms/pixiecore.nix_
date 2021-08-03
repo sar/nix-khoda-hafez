@@ -1,0 +1,12 @@
+{ config, lib, pkgs, ... }:
+with lib;
+let
+
+in
+{
+
+  services.pixiecore = {
+    enable = true;
+    
+  
+}
